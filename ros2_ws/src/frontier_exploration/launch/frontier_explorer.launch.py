@@ -18,7 +18,7 @@ def generate_launch_description():
         # 1. MAP LISTENER (optional helper)
         # ------------------------------------------
         Node(
-            package='frontier_explorer',
+            package='frontier_exploration',
             executable='map_listener',
             name='map_listener',
             output='screen',
@@ -28,7 +28,7 @@ def generate_launch_description():
         # 2. FRONTIER DETECTOR
         # ------------------------------------------
         Node(
-            package='frontier_explorer',
+            package='frontier_exploration',
             executable='frontier_detector',
             name='frontier_detector',
             output='screen',
@@ -38,7 +38,7 @@ def generate_launch_description():
         # 3. FRONTIER SELECTOR
         # ------------------------------------------
         Node(
-            package='frontier_explorer',
+            package='frontier_exploration',
             executable='frontier_selector',
             name='frontier_selector',
             output='screen',

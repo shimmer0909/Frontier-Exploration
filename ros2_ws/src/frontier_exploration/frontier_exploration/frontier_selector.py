@@ -6,7 +6,7 @@ from geometry_msgs.msg import PoseArray, PoseStamped
 import numpy as np
 from tf2_ros import Buffer, TransformListener
 from rclpy.action import ActionClient
-from nav2_msgs.action import NavigationToPose
+from nav2_msgs.action import NavigateToPose
 from std_msgs.msg import Bool
 
 
@@ -19,7 +19,8 @@ class FrontierSelector(Node):
         self.create_subscription(PoseArray, '/frontier_list', self.frontiers_callback, 10)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.nav_client = ActionClient(self, NavigationToPose, 'navigation_to_pose')
+        self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.nav_client.wait_for_server()
 
         self.reached_pub = self.create_publisher(Bool, "/frontier_reached", 10)
 
@@ -38,7 +39,7 @@ class FrontierSelector(Node):
             return None
 
     def frontiers_callback(self, msg):
-        if len(msg.pose) == 0:
+        if len(msg.poses) == 0:
             self.get_logger().info("No frontier points to explore")
             return
 
@@ -56,7 +57,7 @@ class FrontierSelector(Node):
         goal_x, goal_y = best_centroid
 
         # Publish Goal
-        goal = NavigationToPose.Goal()
+        goal = NavigateToPose.Goal()
         goal.pose = PoseStamped()
         goal.pose.header.frame_id = "map"
         goal.pose.header.stamp = self.get_clock().now().to_msg()
@@ -64,7 +65,7 @@ class FrontierSelector(Node):
         goal.pose.pose.position.y = goal_y
         goal.pose.pose.orientation.w = 1.0
 
-        self.nav_client.wait_for_server()
+        # self.nav_client.wait_for_server()
         # self.current_goal_active = True
         future = self.nav_client.send_goal_async(goal)
         future.add_done_callback(self.goal_response_callback)

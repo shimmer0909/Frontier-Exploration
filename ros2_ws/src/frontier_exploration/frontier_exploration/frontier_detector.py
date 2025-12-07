@@ -5,7 +5,7 @@ from rclpy.node import Node
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import PoseArray, Pose
 import numpy as np
-import std_msgs.msg import Bool
+from std_msgs.msg import Bool
 
 class FrontierDetector(Node):
     def __init__(self):
@@ -65,7 +65,7 @@ class FrontierDetector(Node):
             p.orientation.w = 1.0
             pose_array.poses.append(p)
 
-        self.frontier_pub.publish(pose_array)
+        self.frontier_list_pubisher.publish(pose_array)
         self.get_logger().info(f"Published {len(frontiers)} frontiers")
 
 def main(args=None):

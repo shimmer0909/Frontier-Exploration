@@ -23,9 +23,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'map_listener = frontier_explorer.map_listener:main',
-            'frontier_detector = frontier_explorer.frontier_detector:main',
-            'frontier_selector = frontier_explorer.frontier_selector:main',
+            'map_listener = frontier_exploration.map_listener:main',
+            'frontier_detector = frontier_exploration.frontier_detector:main',
+            'frontier_selector = frontier_exploration.frontier_selector:main',
         ],
     },
 )
