@@ -20,20 +20,24 @@ This method is:
 
 ```mermaid
 flowchart TD
-    A[Sensor Input<br/>(Lidar / Depth Camera)]
-        --> B[SLAM<br/>(slam_toolbox)]
-    B -->|Occupancy Grid| C[Frontier Detector Node<br/>(Detect real frontiers)]
-    C -->|Frontier Points| D[Frontier Selector Node<br/>(Pick best frontier)]
-    D -->|Goal Pose| E[Nav2 NavigateToPose Action]
+    A["Sensor Input
+    (Lidar / Depth Camera)"] --> B["SLAM
+    (slam_toolbox)"]
+    B -->|Occupancy Grid| C["Frontier Detector Node
+    (Detect real frontiers)"]
+    C -->|Frontier Points| D["Frontier Selector Node
+    (Pick best frontier)"]
+    D -->|Goal Pose| E["Nav2 NavigateToPose Action"]
 ```
 
 ## 📂 Folder Structure
-
+```text
 frontier_exploration/
 │
 ├── package.xml
 ├── setup.py
 ├── setup.cfg
+│
 ├── launch/
 │   └── frontier_explorer.launch.py
 │
@@ -42,6 +46,7 @@ frontier_exploration/
     ├── map_listener.py
     ├── frontier_detector.py
     ├── frontier_selector.py
+```
 
 ## ✅ Prerequisites & What You Should Have Installed
 
@@ -116,7 +121,7 @@ Triggers detection when:
 2. Clusters frontiers (BFS connected-component method)
 3. Selects best cluster based on:
 ```ini
-Cost = distance – 0.5 * cluster_size
+cost = distance – 0.5 * cluster_size
 ```
 4. Sends centroid to Nav2 using NavigateToPose action
 5. Publishes:
