@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>frontier_explorer</name>
+  <name>frontier_exploration</name>
   <version>0.0.0</version>
   <description>Frontier exploration package for auto-explore behavior</description>
 

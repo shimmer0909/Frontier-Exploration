@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'frontier_explorer'
+package_name = 'frontier_exploration'
 
 setup(
     name=package_name,
