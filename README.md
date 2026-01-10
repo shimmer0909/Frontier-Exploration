@@ -46,15 +46,17 @@ This method is:
 
 ```mermaid
 flowchart TD
-    A[Sensor Input<br/>(Lidar / Depth Camera)]
-        --> B[SLAM<br/>(slam_toolbox)]
-    B -->|Occupancy Grid| C[Frontier Detector Node<br/>(Detect real frontiers)]
-    C -->|Frontier Points| D[Frontier Selector Node<br/>(Pick best frontier)]
-    D -->|Goal Pose| E[Nav2 NavigateToPose Action]
+    A(["Sensor Input\n(Lidar / Depth Camera)"])
+        --> B(["SLAM\n(slam_toolbox)"])
+    B -->|Occupancy Grid| C(["Frontier Detector Node\n(Detect real frontiers)"])
+    C -->|Frontier Points| D(["Frontier Selector Node\n(Pick best frontier)"])
+    D -->|Goal Pose| E(["Nav2 NavigateToPose Action"])
+
 ```
 
 ## 📂 Folder Structure
 
+```text
 ros2_ws/src/frontier_exploration/
 │
 ├── package.xml
@@ -68,6 +70,7 @@ ros2_ws/src/frontier_exploration/
     ├── map_listener.py
     ├── frontier_detector.py
     ├── frontier_selector.py
+```
 
 ## ✅ Prerequisites & What You Should Have Installed
 
@@ -108,6 +111,7 @@ This is the recommended way to run the project.
 The system is composed using standard ROS2 launch composition
 (`IncludeLaunchDescription`) to keep components modular and debuggable.
 
+```text
 full_exploration.launch.py
 │
 ├── simulation.launch.py
@@ -124,6 +128,7 @@ full_exploration.launch.py
 ├── map_listener
 ├── frontier_detector
 └── frontier_selector
+```
 
 Each subsystem can be launched independently for debugging or extension.
 

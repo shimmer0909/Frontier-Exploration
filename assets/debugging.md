@@ -1,12 +1,12 @@
 # Errors I Faced
 
-## Nav2 throws 'Robot is out of bounds of the costmap!'
+## 1. Nav2 throws 'Robot is out of bounds of the costmap!'
 ```bash
 [1765479882.488445639] [nav2_costmap_2d]: Robot is out of bounds of the costmap!
 ```
 
-Solution
-1. Check TF tree
+### Solution
+**Check TF tree**
 ```bash
 ros2 run tf2_tools view_frames
 ```
@@ -21,15 +21,15 @@ but no odom → base_link
 1. create a custom nav2_params.yaml file in src/my_mav2_config/config
 2. Integrate this in frontier_explorer.launch.py
 
-## ${namespace} issue
+## 2. ${namespace} issue
 TF frames are being published with a namespace. So tf2_echo base_link base_scan fails if namespace is not included.
 Add below after launching Gazebo and before SLAM
 1. Publish Waffle URDF + TF
 2. Start fake odometry (publish /odom)
 
-## As soon as RViz is started the robot started moving at high frequency
+## 3. As soon as RViz is started the robot started moving at high frequency
 
-The chain of events :-
+###The chain of events :-
 
 1. RViz loads nav2_default_view.rviz
 2. That RViz config contains Nav2 panels
@@ -38,13 +38,13 @@ The chain of events :-
 5. No valid goal → recovery behaviors kick in
 6. Controller starts publishing /cmd_vel at high rate
 
-🧪 How to confirm the real cause
+### 🧪 How to confirm the real cause
 If you see messages without sending any goal → Nav2 recovery is firing.
 ```bash
 ros2 topic echo /cmd_vel
 ```
 
-Fix :-
+### Fix :-
 1. Stop Nav2 from moving the robot automatically
 ```bash
 # For simulator
@@ -100,7 +100,7 @@ Then manually add:
 2. Nav2 Panel
 3. Waypoint Panel (yet)
 
-## After executing Rviz using Rviz2 commad the world starts moving
+## 4. After executing Rviz using Rviz2 commad the world starts moving
 
 After previous fix Nav2 stops publishing to /cmd_vel
 ```bash
@@ -108,7 +108,7 @@ After previous fix Nav2 stops publishing to /cmd_vel
 ros2 topic info /cmd_vel -v
 ```
 
-🧠 What is actually happening (core concept)
+### 🧠 What is actually happening (core concept)
 slam_toolbox published from map -> odom that keeps moving the map
 ```bash
 ros2 topic info /tf -v
@@ -122,7 +122,7 @@ pkill -f lifecycle_manager_slam
 ```
 The robot should stop moving after this confirming the hypothesis.
 
-Solution - This is NOT a bug. This is correct TF behavior.
+**Solution** - This is NOT a bug. This is correct TF behavior.
 
 🟢 OPTION 1 (RECOMMENDED): Keep SLAM running, but stop Nav2 from driving
 
