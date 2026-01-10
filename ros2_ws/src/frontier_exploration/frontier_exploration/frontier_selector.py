@@ -7,6 +7,7 @@ import numpy as np
 from tf2_ros import Buffer, TransformListener
 from rclpy.action import ActionClient
 from nav2_msgs.action import NavigateToPose
+from action_msgs.msg import GoalStatus
 from std_msgs.msg import Bool
 
 
@@ -35,7 +36,8 @@ class FrontierSelector(Node):
             y = trans.transform.translation.y
             return (x, y)
 
-        except Exception:
+        except Exception as e:
+            self.get_logger().warn(f"Robot pose not available: {e}")
             return None
 
     def frontiers_callback(self, msg):
@@ -81,19 +83,29 @@ class FrontierSelector(Node):
         result_future = goal_handle.get_result_async()
         result_future.add_done_callback(self.result_callback)
 
-    def result_callback(self, future):
-        result = future.result().result
-        self.get_logger().info(f"Status: {result.result}")
+    # def result_callback(self, future):
+    #     result = future.result().result
+    #     self.get_logger().info(f"Status: {result.result}")
 
-        # IMPORTANT: publish that we really reached the waypoint
-        if hasattr(result, "result") and result.result == 0: # SUCCEEDED
-            self.reached_pub.publish(Bool(data=True))
-        else:
-            self.get_logger().warn("Goal failed or status unknown — forcing next waypoint")
-            self.reached_pub.publish(Bool(data=True))
+    #     # IMPORTANT: publish that we really reached the waypoint
+    #     if hasattr(result, "result") and result.result == 0: # SUCCEEDED
+    #         self.reached_pub.publish(Bool(data=True))
+    #     else:
+    #         self.get_logger().warn("Goal failed or status unknown — forcing next waypoint")
+    #         self.reached_pub.publish(Bool(data=True))
 
         # self.current_goal_active = False
         # self.send_next_goal()
+
+    def result_callback(self, future):
+        result = future.result()
+        status = result.status
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            self.get_logger().info("Goal succeeded!")
+            self.reached_pub.publish(Bool(data=True))
+        else:
+            self.get_logger().warn(f"Goal failed or unknown status ({status}) — forcing next waypoint")
+            self.reached_pub.publish(Bool(data=True))
 
 
     def cluster_frontiers(self, frontier_list):

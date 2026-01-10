@@ -1,0 +1,65 @@
+# Use simulation time
+use_sim_time: True
+
+# Global and local costmap settings
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_footprint   # Matches your TF tree
+  update_frequency: 1.0
+  publish_frequency: 0.5
+  static_map: true
+  plugins: ["static_layer", "obstacle_layer"]
+
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_footprint   # Matches your TF tree
+  update_frequency: 5.0
+  publish_frequency: 2.0
+  rolling_window: true
+  width: 6.0
+  height: 6.0
+  resolution: 0.05
+  plugins: ["obstacle_layer", "inflation_layer"]
+
+# Controller
+controller_server:
+  ros__parameters:
+    controller_plugins: ["FollowPath"]
+    controller_frequency: 5.0
+    robot_base_frame: base_footprint
+
+# Planner
+planner_server:
+  ros__parameters:
+    planner_plugins: ["GridBased"]
+    GridBased:
+      tolerance: 0.1
+
+# BT Navigator
+bt_navigator:
+  ros__parameters:
+    use_sim_time: True
+    global_frame: map
+    robot_base_frame: base_footprint
+    odom_topic: /odom
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    wait_for_service_timeout: 1000
+
+# Waypoint Follower
+waypoint_follower:
+  ros__parameters:
+    use_sim_time: True
+    robot_base_frame: base_footprint
+
+# Behavior Server
+behavior_server:
+  ros__parameters:
+    enabled: false
+    use_sim_time: True
+
+# Velocity Smoother
+velocity_smoother:
+  ros__parameters:
+    use_sim_time: True
+

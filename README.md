@@ -1,6 +1,32 @@
 # Frontier-Exploration
 A modular ROS2 frontier-exploration framework that detects real frontier boundaries, clusters them, selects optimal navigation targets, and autonomously maps unknown indoor environments using Nav2 + SLAM.
 
+## 🔍 Why This Project?
+
+Most ROS2 exploration packages:
+- use approximate frontier detection
+- do not cluster real frontier boundaries
+- struggle with Nav2 + SLAM stability
+
+This repository provides:
+✔ Real frontier boundary detection  
+✔ Deterministic BFS-based clustering  
+✔ Nav2-compatible goal selection  
+✔ Debugged TF & SLAM integration  
+✔ Modular, production-ready ROS2 nodes  
+
+Built after debugging real Nav2 + SLAM systems.
+
+## 🆚 Comparison with explore_lite
+
+| Feature | explore_lite | This Repo |
+|------|------------|----------|
+| Frontier definition | Approximate | Exact free→unknown boundary |
+| Clustering | Heuristic | BFS connected components |
+| Nav2 support | Partial | Native |
+| SLAM stability | Fragile | Explicitly handled |
+| ROS2-first | ❌ | ✅ |
+
 ## 🧠 What is Frontier-Based Exploration?
 A frontier = boundary between known free space (0) and unknown space (-1) in the map.
 Robots explore by repeating
@@ -29,7 +55,7 @@ flowchart TD
 
 ## 📂 Folder Structure
 
-frontier_exploration/
+ros2_ws/src/frontier_exploration/
 │
 ├── package.xml
 ├── setup.py
@@ -59,37 +85,49 @@ source install/setup.bash
 
 For a guide on above installations refer to [Setup/setup.md in ROS2-Autonomous-TurtleBot](https://github.com/shimmer0909/ROS2-Autonomous-TurtleBot) repository.
 
-## 🚀 Launch the Full System
+## 🚀 Running the System (Recommended)
 
-### 1️⃣ Start Simulation (Gazebo + sensors)
+### One-Command Full Exploration
 
-```bash
-ros2 launch turtlebot3_gazebo turtlebot3_house.launch.py
-```
-
-### 2️⃣ Start SLAM
+Start simulation, SLAM, Nav2, RViz, and frontier exploration with:
 
 ```bash
-ros2 launch slam_toolbox online_sync_launch.py use_sim_time:=true
+ros2 launch frontier_exploration full_exploration.launch.py
 ```
+This will automatically:
+1. Launch Gazebo simulation (TurtleBot3)
+2. Publish robot TF and odometry
+3. Run SLAM using slam_toolbox
+4. Start Nav2 with correct TF alignment
+5. Launch RViz
+6. Start frontier detection and navigation
 
-### 3️⃣ Start Nav2
+This is the recommended way to run the project.
 
-```bash
-ros2 launch nav2_bringup navigation_launch.py use_sim_time:=true
-```
+### 🧠 Launch Architecture (High-Level)
+The system is composed using standard ROS2 launch composition
+(`IncludeLaunchDescription`) to keep components modular and debuggable.
 
-### 4️⃣ Start RViz
+full_exploration.launch.py
+│
+├── simulation.launch.py
+│ ├── Gazebo world + robot
+│ ├── robot_state_publisher
+│ └── fake odometry
+│
+├── navigation.launch.py
+│ ├── slam_toolbox
+│ ├── Nav2 bringup
+│ └── RViz
+│
+└── frontier_explorer.launch.py
+├── map_listener
+├── frontier_detector
+└── frontier_selector
 
-```bash
-rviz2 -d /opt/ros/humble/share/nav2_bringup/rviz/nav2_default_view.rviz
-```
+Each subsystem can be launched independently for debugging or extension.
 
-### 5️⃣ Start Frontier Explorer
-
-```bash
-ros2 launch frontier_exploration frontier_explorer.launch.py use_sim_time:=true
-```
+📘 See `assets/launch_architecture.md` for full details.
 
 ## 🧩 How the Nodes Work
 
@@ -266,3 +304,7 @@ when goal succeeds → triggers next frontier.
 **Use when:**
 1. Writing a paper / advanced robotics research
 2. Multi-robot exploration
+
+## 🛠 Common Issues & Debugging
+See: assets/debugging.md
+
