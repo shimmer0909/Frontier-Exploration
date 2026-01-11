@@ -24,6 +24,8 @@ class FrontierSelector(Node):
         self.nav_client.wait_for_server()
 
         self.reached_pub = self.create_publisher(Bool, "/frontier_reached", 10)
+        self.current_goal_active = False
+        self.min_goal_distance = 0.5  # meters
 
     def get_robot_pose(self):
         try:
@@ -41,22 +43,32 @@ class FrontierSelector(Node):
             return None
 
     def frontiers_callback(self, msg):
+        if self.current_goal_active:
+            return
+
         if len(msg.poses) == 0:
             self.get_logger().info("No frontier points to explore")
             return
 
         frontiers = [(p.position.x, p.position.y) for p in msg.poses]
-        frontier_clusters = self.cluster_frontiers(frontiers)
         robot_pose = self.get_robot_pose()
         if robot_pose is None:
             self.get_logger().warn("Robot pose not available")
             return
-        best_cluster, best_centroid = self.get_best_frontier(frontier_clusters, robot_pose)
+        best_centroid = self.get_best_frontier(frontiers, robot_pose)
+
 
         if best_centroid is None:
             return
 
         goal_x, goal_y = best_centroid
+
+        # don't send goals closer than 0.5 m
+        goal_distance = np.hypot(goal_x - robot_pose[0], goal_y - robot_pose[1])
+        if goal_distance < self.min_goal_distance: 
+            self.get_logger().info(f"Skipping very close frontier ({goal_distance:.2f} m)")
+            self.reached_pub.publish(Bool(data=True))
+            return
 
         # Publish Goal
         goal = NavigateToPose.Goal()
@@ -71,15 +83,17 @@ class FrontierSelector(Node):
         # self.current_goal_active = True
         future = self.nav_client.send_goal_async(goal)
         future.add_done_callback(self.goal_response_callback)
+        self.current_goal_active = True
 
     def goal_response_callback(self, future):
         goal_handle = future.result()
 
         if not goal_handle.accepted:
             self.get_logger().error("Goal rejected by Nav2!")
-            # self.current_goal_active = False
+            self.current_goal_active = False
             return
 
+        self.current_goal_active = True
         result_future = goal_handle.get_result_async()
         result_future.add_done_callback(self.result_callback)
 
@@ -104,24 +118,22 @@ class FrontierSelector(Node):
             self.get_logger().info("Goal succeeded!")
             self.reached_pub.publish(Bool(data=True))
         else:
-            self.get_logger().warn(f"Goal failed or unknown status ({status}) — forcing next waypoint")
-            self.reached_pub.publish(Bool(data=True))
+            self.get_logger().warn(f"Goal failed or unknown status ({status}) — not triggering frontier")
+            # self.reached_pub.publish(Bool(data=True))
+
+        self.current_goal_active = False
 
 
-    def cluster_frontiers(self, frontier_list):
-        if len(frontier_list) == 0:
-            return []
-            
-        # frontier_set = set(frontier_list)
+    def cluster_frontiers(self, frontier_cells):
+        frontier_set = set(frontier_cells)
         visited = set()
-
         clusters = []
 
-        # neighbour_directions = [(-1, -1), (-1, 0), (-1, 1),
-        #             (0, -1), (0, 1),
-        #             (1, -1), (1, 0), (1, 1)]
+        neighbors = [(-1,-1), (-1,0), (-1,1),
+                    (0,-1),          (0,1),
+                    (1,-1),  (1,0),  (1,1)]
 
-        for cell in frontier_list:
+        for cell in frontier_cells:
             if cell in visited:
                 continue
 
@@ -130,59 +142,42 @@ class FrontierSelector(Node):
             visited.add(cell)
 
             while queue:
-                # row,col = queue.pop(0)
-                # cluster.append((row,col))
+                r, c = queue.pop(0)
+                cluster.append((r, c))
 
-                # for dr, dc in neighbour_directions:
-                #     nr, nc = row + dr, col + dc
-                #     neighbour = (nr, nc)
-
-                #     if neighbour not in visited and neighbour in frontier_set:
-                #         visited.add(neighbour)
-                #         queue.append(neighbour)
-
-                x, y = queue.pop(0)
-                cluster.append((x, y))
-
-                for nx, ny in frontier_list:
-                    if (nx, ny) not in visited:
-                        if np.hypot(nx-x, ny-y) < 0.5:  # ~1 grid cell
-                            visited.add((nx, ny))
-                            queue.append((nx, ny))
+                for dr, dc in neighbors:
+                    nbr = (r+dr, c+dc)
+                    if nbr in frontier_set and nbr not in visited:
+                        visited.add(nbr)
+                        queue.append(nbr)
 
             clusters.append(cluster)
 
         return clusters
 
-    def get_best_frontier(self, clusters, robot_pose):
-        if not clusters:
-            return None, None
-        
+    def get_best_frontier(self, frontiers, robot_pose):
         rx, ry = robot_pose
 
-        best_score = float('inf')
-        best_cluster = None
-        best_centroid = None
+        # Separate close vs far
+        far_frontiers = [(x, y) for (x, y) in frontiers 
+                        if np.hypot(x-rx, y-ry) > self.min_goal_distance]
 
-        for cluster in clusters:
-            rows = [p[0] for p in cluster]
-            cols = [p[1] for p in cluster]
+        if far_frontiers:
+            frontiers_to_consider = far_frontiers
+        else:
+            frontiers_to_consider = frontiers  # if all are too close
 
-            cx = np.mean(rows)
-            cy = np.mean(cols)
+        best_cost = None
+        best_point = None
 
-            dist = np.hypot(cx-rx, cy-ry)
+        for (x, y) in frontiers_to_consider:
+            dist = np.hypot(x - rx, y - ry)
+            cost = dist
+            if best_cost is None or cost < best_cost:
+                best_cost = cost
+                best_point = (x, y)
 
-            size = len(cluster)
-
-            cost = dist - 0.2*size
-
-            if cost < best_score:
-                best_score = cost
-                best_cluster = cluster
-                best_centroid = (cx,cy)
-
-        return best_cluster, best_centroid
+        return best_point
 
 def main(args=None):
     rclpy.init(args=args)
